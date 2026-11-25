@@ -7,6 +7,7 @@
 | 练习 | 目录 | 运行方式 |
 | --- | --- | --- |
 | PoW 工作量证明 | `pow/` | `cd pow && go run . -name <昵称> [-nonce <起始 nonce>] [-difficulty <难度列表>]` |
+| RSA 非对称加密 | `rsa-sign/` | `cd rsa-sign && go run . -name <昵称> [-nonce <起始 nonce>]` |
 
 ## 1. PoW 工作量证明
 
@@ -40,3 +41,21 @@ go test
 | 6 | 1677 万 | 约 1.5 秒 |
 | 7 | 2.7 亿 | 约 20 秒 |
 | 8 | 43 亿 | 约 6 分钟 |
+
+## 2. RSA 非对称加密
+
+生成一对 RSA 公私钥，用私钥对满足 PoW（哈希值 4 个 0 开头）的 `昵称 + nonce` 签名，再用公钥验证。
+输出依次是密钥对（PEM 格式）、PoW 结果、签名和验证结果。
+
+- `main.go`：程序入口，按「生成密钥对 → PoW → 签名 → 验证」的顺序执行并打印
+- `rsa.go`：密钥生成、签名（SHA-256 + RSA PKCS#1 v1.5）、验证，以及密钥的 PEM 输出
+- `pow.go`、`pow_test.go`：从 `pow/` 原样复制，用来找出要签名的内容
+- `rsa_test.go`：单元测试
+
+密钥每次运行时新生成，只存在于内存和输出里，不写入文件。
+
+```bash
+cd rsa-sign
+go run . -name wangyan -nonce 0
+go test
+```
