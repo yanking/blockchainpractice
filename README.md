@@ -1,6 +1,6 @@
 # blockchainpractice
 
-区块链练习。每个练习单独一个文件夹，互不依赖，各自带 `go.mod`。
+区块链练习。每个练习单独一个文件夹，互不依赖；Go 练习各自带 `go.mod`。
 
 ## 练习列表
 
@@ -8,6 +8,7 @@
 | --- | --- | --- |
 | PoW 工作量证明 | `pow/` | `cd pow && go run . -name <昵称> [-nonce <起始 nonce>] [-difficulty <难度列表>]` |
 | RSA 非对称加密 | `rsa-sign/` | `cd rsa-sign && go run . -name <昵称> [-nonce <起始 nonce>]` |
+| Bank 合约 | `bank/` | Remix 编译部署（Solidity 0.8.39），MetaMask 存款、提取 |
 
 ## 1. PoW 工作量证明
 
@@ -59,3 +60,31 @@ cd rsa-sign
 go run . -name wangyan -nonce 0
 go test
 ```
+
+## 3. Bank 合约
+
+接收 ETH 存款，记录每个地址的存款金额，维护存款金额前 3 名，只有管理员（部署合约的地址）能提取合约里的全部 ETH。
+
+- `Bank.sol`：Bank 合约，单文件，Solidity 0.8.39，无外部依赖
+
+### 接口
+
+| 接口 | 说明 |
+| --- | --- |
+| `receive()` | 存款。用 MetaMask 向合约地址转账（不带 data）即可触发，金额累加到该地址名下并更新前 3 名；金额为 0 时 revert |
+| `withdraw()` | 管理员提取合约里的全部 ETH，其他地址调用会 revert |
+| `admin` | 管理员地址，即部署者 |
+| `deposits(地址)` | 该地址的存款金额 |
+| `top3(下标)` | 存款金额前 3 名的地址，下标 0 到 2，按金额从高到低；不足 3 人时空位为全 0 地址 |
+
+金额相同的，已在榜上的地址排在前面。
+
+### 运行方式
+
+在 [Remix](https://remix.ethereum.org) 里编译部署，用 MetaMask 操作，钱包切到 Sepolia 测试网即可：
+
+1. 打开 `bank/Bank.sol`，在 Solidity Compiler 里把编译器版本选为 `0.8.39`，点 Compile
+2. 在 Deploy & Run Transactions 里把 Environment 选为 `Injected Provider - MetaMask`，连接钱包后点 Deploy
+3. 在 MetaMask 里切换账户，向合约地址转账，每笔转账就是一次存款
+4. 回到 Remix，在 Deployed Contracts 里点 `top3`（输入 0、1、2）和 `deposits`（输入地址）查看记录
+5. 用部署时的账户点 `withdraw` 提取全部 ETH；换别的账户点会 revert
